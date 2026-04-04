@@ -361,6 +361,9 @@ export default function App() {
     if (!authSession?.user?.id) {
       return;
     }
+    if (loadedUserId !== authSession.user.id) {
+      return;
+    }
 
     saveUserCache(authSession.user.id, {
       kits: serializeKits(kits),
@@ -368,7 +371,7 @@ export default function App() {
       currentKitId,
       updatedAt: new Date().toISOString(),
     });
-  }, [authSession?.user?.id, kits, progress, currentKitId]);
+  }, [authSession?.user?.id, loadedUserId, kits, progress, currentKitId]);
 
   useEffect(() => {
     if (!authReady) {
