@@ -72,6 +72,11 @@ export const StudySession = ({ kit, mode, onComplete, onQuit }: StudySessionProp
     let mounted = true;
 
     const begin = async () => {
+      if (kit.questions.length === 0) {
+        setRequestError('This kit has no questions yet. Add content or regenerate questions first.');
+        setLoading(false);
+        return;
+      }
       logDebug('study', 'Starting backend session', { sourceId: kit.id, mode });
       setLoading(true);
       setRequestError(null);
@@ -264,9 +269,13 @@ export const StudySession = ({ kit, mode, onComplete, onQuit }: StudySessionProp
 
   if (!currentQuestion) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
-        <p className="text-on-surface-variant">No question available for this session.</p>
-        <Button onClick={onQuit}>Back</Button>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 text-center px-6">
+        <p className="text-on-surface-variant">
+          {requestError ?? 'No question available for this session.'}
+        </p>
+        <div className="flex items-center gap-3">
+          <Button onClick={onQuit}>Back to Review</Button>
+        </div>
       </div>
     );
   }

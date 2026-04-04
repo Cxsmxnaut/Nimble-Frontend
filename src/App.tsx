@@ -26,6 +26,7 @@ import {
   getProgress,
   listSourceQuestions,
   listSources,
+  uploadSourceFile,
   updateQuestion,
 } from './lib/api';
 import { logDebug, logError } from './lib/debug';
@@ -452,6 +453,27 @@ export default function App() {
     }
   };
 
+  const handleUploadKitFile = async (file: File) => {
+    logDebug('app', 'Uploading source file', { fileName: file.name, size: file.size });
+    setIsProcessing(true);
+    setActiveTab('processing');
+    setError(null);
+    try {
+      const source = await uploadSourceFile(file);
+      await refreshKits();
+      await refreshProgress();
+      setCurrentKitId(source.id);
+      setActiveTab('review');
+    } catch (err) {
+      logError('app', 'Failed uploading source file', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload file.');
+      setActiveTab('create');
+      throw err;
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleDeleteKit = async (kitId: string) => {
     logDebug('app', 'Deleting kit', { kitId });
     try {
@@ -620,7 +642,7 @@ export default function App() {
           {activeTab === 'progress' && <ProgressPage progress={progress} onRefresh={() => { void refreshProgress(); }} />}
           {activeTab === 'help' && <HelpPage onCreateKit={() => setActiveTab('create')} />}
           {activeTab === 'settings' && <SettingsPage onLogout={() => { void handleLogout(); }} userProfile={userProfile} />}
-          {activeTab === 'create' && <CreateKit onGenerate={handleGenerateKit} />}
+          {activeTab === 'create' && <CreateKit onGenerate={handleGenerateKit} onUploadFile={handleUploadKitFile} />}
           {activeTab === 'processing' && isProcessing && <Processing />}
           {activeTab === 'review' && currentKit && (
             <ReviewKit
