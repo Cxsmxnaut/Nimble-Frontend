@@ -37,11 +37,19 @@ export const TopBar = ({
 
       <div className="flex items-center gap-2 md:gap-6 min-w-0">
         <div className="flex items-center gap-1 sm:gap-3 shrink-0">
-          <button className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative">
+          <button
+            onClick={() => onNavigate('progress')}
+            className="p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all relative"
+            title="Open progress"
+          >
             <Bell className="w-5 h-5" />
             <span className="absolute top-2 right-2 w-2 h-2 bg-secondary rounded-full"></span>
           </button>
-          <button className="hidden sm:inline-flex p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all">
+          <button
+            onClick={() => onNavigate('create')}
+            className="hidden sm:inline-flex p-2 text-on-surface-variant hover:bg-surface-container-high rounded-full transition-all"
+            title="Create new kit"
+          >
             <Zap className="w-5 h-5" />
           </button>
           

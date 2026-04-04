@@ -543,6 +543,11 @@ export default function App() {
     setActiveTab('study');
   };
 
+  const handleRetryWeakItems = () => {
+    setSelectedStudyMode('weak_review');
+    setActiveTab('study');
+  };
+
   const handleCompleteSession = (results: { correct: number; incorrect: number; weak: SessionResult['weakQuestions'] }) => {
     logDebug('app', 'Session completed', results);
     const attempts = results.correct + results.incorrect;
@@ -648,16 +653,22 @@ export default function App() {
             <ReviewKit
               kit={currentKit}
               onStart={() => handleStudyKit(currentKit.id)}
+              onStartRapid={() => {
+                setSelectedStudyMode('fast_drill');
+                setActiveTab('study');
+              }}
               onBack={() => setActiveTab('dashboard')}
               onDelete={() => { void handleDeleteKit(currentKit.id); }}
               onUpdateQuestion={(questionId, question, answer) => {
-                void handleEditQuestion(currentKit.id, questionId, question, answer).catch((err) => {
+                return handleEditQuestion(currentKit.id, questionId, question, answer).catch((err) => {
                   setError(err instanceof Error ? err.message : 'Failed to update question.');
+                  throw err;
                 });
               }}
               onDeleteQuestion={(questionId) => {
-                void handleDeleteQuestion(currentKit.id, questionId).catch((err) => {
+                return handleDeleteQuestion(currentKit.id, questionId).catch((err) => {
                   setError(err instanceof Error ? err.message : 'Failed to delete question.');
+                  throw err;
                 });
               }}
             />
@@ -682,7 +693,7 @@ export default function App() {
             <SessionComplete
               result={sessionResult}
               onBack={() => setActiveTab('dashboard')}
-              onRetry={() => setActiveTab('study-mode')}
+              onRetry={handleRetryWeakItems}
               onNew={() => setActiveTab('create')}
             />
           )}

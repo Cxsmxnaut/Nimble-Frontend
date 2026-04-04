@@ -14,8 +14,24 @@ export const SettingsPage = ({
     avatarUrl: string | null;
   };
 }) => {
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
-  const [sessionLength, setSessionLength] = useState(10);
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const stored = window.localStorage.getItem('nimble_theme');
+    return stored === 'light' ? 'light' : 'dark';
+  });
+  const [sessionLength, setSessionLength] = useState(() => {
+    const stored = Number(window.localStorage.getItem('nimble_session_length') ?? 10);
+    return [5, 10, 15].includes(stored) ? stored : 10;
+  });
+
+  const setThemeAndPersist = (value: 'dark' | 'light') => {
+    setTheme(value);
+    window.localStorage.setItem('nimble_theme', value);
+  };
+
+  const setSessionLengthAndPersist = (value: number) => {
+    setSessionLength(value);
+    window.localStorage.setItem('nimble_session_length', String(value));
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-12">
@@ -57,7 +73,7 @@ export const SettingsPage = ({
               </div>
             </div>
             <div className="flex justify-end pt-4">
-              <Button type="submit">Save Profile</Button>
+              <Button type="button" variant="outline" disabled>Profile managed by Google sign-in</Button>
             </div>
           </form>
         </section>
@@ -68,18 +84,18 @@ export const SettingsPage = ({
           <div className="space-y-4 flex-1">
             <ThemeOption 
               active={theme === 'dark'} 
-              onClick={() => setTheme('dark')}
+              onClick={() => setThemeAndPersist('dark')}
               icon={<Moon className="w-5 h-5" />}
               label="Dark Mode"
             />
             <ThemeOption 
               active={theme === 'light'} 
-              onClick={() => setTheme('light')}
+              onClick={() => setThemeAndPersist('light')}
               icon={<Sun className="w-5 h-5" />}
               label="Light Mode"
             />
           </div>
-          <p className="text-xs text-on-surface-variant mt-6 italic">Dark mode is optimized for high-concentration study sessions.</p>
+          <p className="text-xs text-on-surface-variant mt-6 italic">Theme preference is saved locally on this device.</p>
         </section>
 
         {/* Session Length */}
@@ -97,7 +113,7 @@ export const SettingsPage = ({
             {[5, 10, 15].map(val => (
               <button 
                 key={val}
-                onClick={() => setSessionLength(val)}
+                onClick={() => setSessionLengthAndPersist(val)}
                 className={cn(
                   "flex-1 min-w-[100px] py-4 rounded-2xl transition-all flex flex-col items-center justify-center gap-1 group",
                   sessionLength === val 
@@ -120,8 +136,8 @@ export const SettingsPage = ({
               <span>Sign Out</span>
               <LogOut className="w-5 h-5" />
             </button>
-            <button className="w-full text-left p-4 rounded-xl bg-error/10 hover:bg-error/20 text-error font-semibold flex items-center justify-between transition-colors">
-              <span>Delete Account</span>
+            <button disabled className="w-full text-left p-4 rounded-xl bg-error/10 text-error/60 font-semibold flex items-center justify-between transition-colors cursor-not-allowed">
+              <span>Delete Account (Coming Soon)</span>
               <Trash2 className="w-5 h-5" />
             </button>
           </div>
