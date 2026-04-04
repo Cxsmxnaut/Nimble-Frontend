@@ -12,6 +12,7 @@ export const AuthPage = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const configuredRedirect = (import.meta.env.VITE_SUPABASE_REDIRECT_URL ?? '').trim();
+  const productionRedirectFallback = 'https://nimble-frontend-ten.vercel.app';
 
   const toSupabaseEmail = (value: string): string => {
     const trimmed = value.trim().toLowerCase();
@@ -33,9 +34,11 @@ export const AuthPage = () => {
     const configuredIsLocalhost = /^http:\/\/localhost(?::\d+)?$/i.test(normalizedConfiguredRedirect);
     const originIsLocalhost = /^http:\/\/localhost(?::\d+)?$/i.test(normalizedOrigin);
     const redirectTarget =
-      normalizedConfiguredRedirect && !(configuredIsLocalhost && !originIsLocalhost)
+      normalizedConfiguredRedirect && !configuredIsLocalhost
         ? normalizedConfiguredRedirect
-        : normalizedOrigin;
+        : originIsLocalhost
+          ? productionRedirectFallback
+          : normalizedOrigin;
 
     logDebug('auth', 'Starting OAuth flow', {
       provider,
