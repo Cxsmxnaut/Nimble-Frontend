@@ -33,6 +33,7 @@ import { supabase } from './lib/supabase';
 
 const MASTERY_KEY = 'nimble_kit_mastery_map';
 const LAST_SESSION_KEY = 'nimble_kit_last_session_map';
+const USER_CACHE_PREFIX = 'nimble_user_cache_v1';
 const APP_TABS = new Set([
   'dashboard',
   'kits',
@@ -91,6 +92,56 @@ function loadJsonMap(key: string): Record<string, number> {
 
 function saveJsonMap(key: string, value: Record<string, number>): void {
   window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+type SerializedKit = Omit<Kit, 'lastSession'> & {
+  lastSession?: string;
+};
+
+type UserCachePayload = {
+  kits: SerializedKit[];
+  progress: ProgressData | null;
+  currentKitId: string | null;
+  updatedAt: string;
+};
+
+function userCacheKey(userId: string): string {
+  return `${USER_CACHE_PREFIX}:${userId}`;
+}
+
+function serializeKits(kits: Kit[]): SerializedKit[] {
+  return kits.map((kit) => ({
+    ...kit,
+    lastSession: kit.lastSession ? kit.lastSession.toISOString() : undefined,
+  }));
+}
+
+function deserializeKits(kits: SerializedKit[]): Kit[] {
+  return kits.map((kit) => ({
+    ...kit,
+    lastSession: kit.lastSession ? new Date(kit.lastSession) : undefined,
+  }));
+}
+
+function loadUserCache(userId: string): UserCachePayload | null {
+  const raw = window.localStorage.getItem(userCacheKey(userId));
+  if (!raw) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(raw) as UserCachePayload;
+    if (!Array.isArray(parsed.kits)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+function saveUserCache(userId: string, payload: UserCachePayload): void {
+  window.localStorage.setItem(userCacheKey(userId), JSON.stringify(payload));
 }
 
 function guessIcon(source: BackendSource, idx: number): string {
@@ -307,6 +358,19 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!authSession?.user?.id) {
+      return;
+    }
+
+    saveUserCache(authSession.user.id, {
+      kits: serializeKits(kits),
+      progress,
+      currentKitId,
+      updatedAt: new Date().toISOString(),
+    });
+  }, [authSession?.user?.id, kits, progress, currentKitId]);
+
+  useEffect(() => {
     if (!authReady) {
       return;
     }
@@ -320,6 +384,20 @@ export default function App() {
     if (loadedUserId === authSession.user.id) {
       setView('app');
       return;
+    }
+
+    const cache = loadUserCache(authSession.user.id);
+    if (cache) {
+      logDebug('app', 'Hydrating UI from user cache', {
+        userId: authSession.user.id,
+        kitCount: cache.kits.length,
+        hasProgress: Boolean(cache.progress),
+        updatedAt: cache.updatedAt,
+      });
+      const cachedKits = deserializeKits(cache.kits);
+      setKits(cachedKits);
+      setProgress(cache.progress);
+      setCurrentKitId(cache.currentKitId ?? cachedKits[0]?.id ?? null);
     }
 
     setLoadedUserId(authSession.user.id);
