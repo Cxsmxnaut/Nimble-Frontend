@@ -31,14 +31,7 @@ export const AuthPage = () => {
 
     const normalizedConfiguredRedirect = configuredRedirect.replace(/\/+$/, '');
     const normalizedOrigin = window.location.origin.replace(/\/+$/, '');
-    const configuredIsLocalhost = /^http:\/\/localhost(?::\d+)?$/i.test(normalizedConfiguredRedirect);
-    const originIsLocalhost = /^http:\/\/localhost(?::\d+)?$/i.test(normalizedOrigin);
-    const redirectTarget =
-      normalizedConfiguredRedirect && !configuredIsLocalhost
-        ? normalizedConfiguredRedirect
-        : originIsLocalhost
-          ? productionRedirectFallback
-          : normalizedOrigin;
+    const redirectTarget = normalizedConfiguredRedirect || productionRedirectFallback;
 
     logDebug('auth', 'Starting OAuth flow', {
       provider,
