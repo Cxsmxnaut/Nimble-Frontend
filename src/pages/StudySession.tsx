@@ -45,6 +45,7 @@ function modeLabel(mode: StudyMode): string {
 export const StudySession = ({ kit, mode, onComplete, onQuit }: StudySessionProps) => {
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState<ActiveQuestion | null>(null);
+  const [queuedNextQuestion, setQueuedNextQuestion] = useState<ActiveQuestion | null>(null);
   const [sessionQuestionCap, setSessionQuestionCap] = useState<number | null>(null);
   const [answer, setAnswer] = useState('');
   const [showFeedback, setShowFeedback] = useState(false);
@@ -84,6 +85,7 @@ export const StudySession = ({ kit, mode, onComplete, onQuit }: StudySessionProp
         setSessionId(started.session.id);
         setSessionQuestionCap(started.session.questionCap);
         setCurrentQuestion(started.currentQuestion);
+        setQueuedNextQuestion(null);
         logDebug('study', 'Session started', {
           sessionId: started.session.id,
           hasCurrentQuestion: Boolean(started.currentQuestion),
@@ -181,7 +183,7 @@ export const StudySession = ({ kit, mode, onComplete, onQuit }: StudySessionProp
       }
 
       setNeedsRetry(false);
-      setCurrentQuestion(result.nextQuestion);
+      setQueuedNextQuestion(result.nextQuestion);
     } catch (err) {
       logError('study', 'Failed to submit attempt', err);
       setRequestError(err instanceof Error ? err.message : 'Failed to submit answer.');
@@ -198,6 +200,10 @@ export const StudySession = ({ kit, mode, onComplete, onQuit }: StudySessionProp
       return;
     }
 
+    if (queuedNextQuestion) {
+      setCurrentQuestion(queuedNextQuestion);
+      setQueuedNextQuestion(null);
+    }
     setShowFeedback(false);
     setLastOutcome(null);
     setAnswer('');
