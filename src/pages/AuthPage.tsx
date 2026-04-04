@@ -12,7 +12,7 @@ export const AuthPage = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const configuredRedirect = (import.meta.env.VITE_SUPABASE_REDIRECT_URL ?? '').trim();
-  const productionRedirectFallback = 'https://nimble-frontend-ten.vercel.app';
+  const productionRedirectFallback = 'https://nimble-frontend-ten.vercel.app/';
 
   const toSupabaseEmail = (value: string): string => {
     const trimmed = value.trim().toLowerCase();
@@ -31,7 +31,7 @@ export const AuthPage = () => {
 
     const normalizedConfiguredRedirect = configuredRedirect.replace(/\/+$/, '');
     const normalizedOrigin = window.location.origin.replace(/\/+$/, '');
-    const redirectTarget = normalizedConfiguredRedirect || productionRedirectFallback;
+    const redirectTarget = normalizedConfiguredRedirect ? `${normalizedConfiguredRedirect}/` : productionRedirectFallback;
 
     logDebug('auth', 'Starting OAuth flow', {
       provider,
@@ -40,10 +40,11 @@ export const AuthPage = () => {
       currentOrigin: normalizedOrigin,
     });
 
-    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+    const { data: oauthData, error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
         redirectTo: redirectTarget,
+        skipBrowserRedirect: true,
       },
     });
 
@@ -54,7 +55,22 @@ export const AuthPage = () => {
       return;
     }
 
-    logDebug('auth', `OAuth redirect started for ${provider}`);
+    const providerUrl = oauthData?.url ?? null;
+    if (!providerUrl) {
+      setError('OAuth provider URL was not returned.');
+      setPending(null);
+      return;
+    }
+
+    const resolvedUrl = new URL(providerUrl);
+    resolvedUrl.searchParams.set('redirect_to', redirectTarget);
+
+    logDebug('auth', `OAuth redirect started for ${provider}`, {
+      providerUrl,
+      resolvedUrl: resolvedUrl.toString(),
+    });
+
+    window.location.assign(resolvedUrl.toString());
   };
 
   const sendMagicLink = async (event: FormEvent) => {
