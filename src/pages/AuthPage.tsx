@@ -11,6 +11,7 @@ export const AuthPage = () => {
   const [pending, setPending] = useState<null | 'google' | 'apple' | 'magic'>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const configuredRedirect = (import.meta.env.VITE_SUPABASE_REDIRECT_URL ?? '').trim();
 
   const toSupabaseEmail = (value: string): string => {
     const trimmed = value.trim().toLowerCase();
@@ -30,7 +31,7 @@ export const AuthPage = () => {
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: configuredRedirect || window.location.origin,
       },
     });
 
