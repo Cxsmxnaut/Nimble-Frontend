@@ -28,10 +28,26 @@ export const AuthPage = () => {
     setMessage(null);
     setError(null);
 
+    const normalizedConfiguredRedirect = configuredRedirect.replace(/\/+$/, '');
+    const normalizedOrigin = window.location.origin.replace(/\/+$/, '');
+    const configuredIsLocalhost = /^http:\/\/localhost(?::\d+)?$/i.test(normalizedConfiguredRedirect);
+    const originIsLocalhost = /^http:\/\/localhost(?::\d+)?$/i.test(normalizedOrigin);
+    const redirectTarget =
+      normalizedConfiguredRedirect && !(configuredIsLocalhost && !originIsLocalhost)
+        ? normalizedConfiguredRedirect
+        : normalizedOrigin;
+
+    logDebug('auth', 'Starting OAuth flow', {
+      provider,
+      redirectTarget,
+      configuredRedirect: normalizedConfiguredRedirect || null,
+      currentOrigin: normalizedOrigin,
+    });
+
     const { error: oauthError } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: configuredRedirect || window.location.origin,
+        redirectTo: redirectTarget,
       },
     });
 
