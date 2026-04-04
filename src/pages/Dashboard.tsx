@@ -25,9 +25,12 @@ interface DashboardProps {
   onViewAll: () => void;
   onTabChange?: (tab: string) => void;
   progress: ProgressData | null;
+  userProfile: {
+    displayName: string;
+  };
 }
 
-export const Dashboard = ({ kits, onStudyKit, onCreateKit, onEditKit, onViewAll, onTabChange, progress }: DashboardProps) => {
+export const Dashboard = ({ kits, onStudyKit, onCreateKit, onEditKit, onViewAll, onTabChange, progress, userProfile }: DashboardProps) => {
   const recentKit = kits[0];
   const weakItems = progress?.weakQuestions ?? [];
   const outcomeValues = progress ? Object.values(progress.outcomes) : [];
@@ -38,12 +41,13 @@ export const Dashboard = ({ kits, onStudyKit, onCreateKit, onEditKit, onViewAll,
   const lastSessionLabel = recentKit?.lastSession
     ? recentKit.lastSession.toLocaleDateString()
     : 'No sessions yet';
+  const firstName = userProfile.displayName.trim().split(/\s+/)[0] || 'there';
 
   return (
     <div className="space-y-12">
       <header className="flex justify-between items-end">
         <div>
-          <h2 className="text-3xl font-headline font-extrabold tracking-tight text-on-surface">Welcome back</h2>
+          <h2 className="text-3xl font-headline font-extrabold tracking-tight text-on-surface">Welcome back, {firstName}</h2>
           <p className="text-on-surface-variant font-medium mt-1">Track progress across your live study kits.</p>
         </div>
       </header>

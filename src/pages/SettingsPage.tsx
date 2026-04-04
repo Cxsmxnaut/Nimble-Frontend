@@ -3,7 +3,17 @@ import { Button } from '../components/Button';
 import { User, Moon, Sun, Timer, LogOut, Trash2, ShieldCheck } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-export const SettingsPage = ({ onLogout }: { onLogout: () => void }) => {
+export const SettingsPage = ({
+  onLogout,
+  userProfile,
+}: {
+  onLogout: () => void;
+  userProfile: {
+    displayName: string;
+    email: string;
+    avatarUrl: string | null;
+  };
+}) => {
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const [sessionLength, setSessionLength] = useState(10);
 
@@ -18,8 +28,17 @@ export const SettingsPage = ({ onLogout }: { onLogout: () => void }) => {
         {/* Profile */}
         <section className="lg:col-span-2 bg-surface-container-low rounded-2xl p-8 border border-outline-variant/5">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center">
-              <User className="text-primary w-8 h-8" />
+            <div className="w-16 h-16 rounded-xl bg-primary/10 flex items-center justify-center overflow-hidden">
+              {userProfile.avatarUrl ? (
+                <img
+                  src={userProfile.avatarUrl}
+                  alt={userProfile.displayName}
+                  className="w-full h-full object-cover"
+                  referrerPolicy="no-referrer"
+                />
+              ) : (
+                <User className="text-primary w-8 h-8" />
+              )}
             </div>
             <div>
               <h3 className="text-2xl font-bold font-headline text-on-surface">Profile Information</h3>
@@ -30,11 +49,11 @@ export const SettingsPage = ({ onLogout }: { onLogout: () => void }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/50 px-1">Full Name</label>
-                <input className="w-full bg-surface-container-lowest border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" type="text" defaultValue="Julian Thorne"/>
+                <input className="w-full bg-surface-container-lowest border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" type="text" defaultValue={userProfile.displayName}/>
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-bold uppercase tracking-widest text-on-surface-variant/50 px-1">Email Address</label>
-                <input className="w-full bg-surface-container-lowest border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" type="email" defaultValue="julian.thorne@velocity.io"/>
+                <input className="w-full bg-surface-container-lowest border-none rounded-xl p-4 focus:ring-2 focus:ring-primary/40 text-on-surface transition-all" type="email" defaultValue={userProfile.email}/>
               </div>
             </div>
             <div className="flex justify-end pt-4">

@@ -111,6 +111,42 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
 
+  const userProfile = useMemo(() => {
+    const user = authSession?.user;
+    if (!user) {
+      return {
+        displayName: 'Learner',
+        email: '',
+        avatarUrl: null as string | null,
+      };
+    }
+
+    const metadata = (user.user_metadata ?? {}) as Record<string, unknown>;
+    const displayNameCandidates = [
+      metadata.full_name,
+      metadata.name,
+      metadata.user_name,
+      metadata.preferred_username,
+      user.email?.split('@')[0],
+    ];
+    const avatarCandidates = [
+      metadata.avatar_url,
+      metadata.picture,
+    ];
+
+    const displayName =
+      displayNameCandidates.find((value): value is string => typeof value === 'string' && value.trim().length > 0)?.trim() ??
+      'Learner';
+    const avatarUrl =
+      avatarCandidates.find((value): value is string => typeof value === 'string' && value.trim().length > 0)?.trim() ?? null;
+
+    return {
+      displayName,
+      email: user.email ?? '',
+      avatarUrl,
+    };
+  }, [authSession]);
+
   useEffect(() => {
     logDebug('app', 'Mounted App');
   }, []);
@@ -398,6 +434,7 @@ export default function App() {
           <TopBar
             onNavigate={setActiveTab}
             onLogout={() => { void handleLogout(); }}
+            userProfile={userProfile}
           />
         )}
 
@@ -418,6 +455,7 @@ export default function App() {
               onViewAll={() => setActiveTab('kits')}
               onTabChange={setActiveTab}
               progress={progress}
+              userProfile={userProfile}
             />
           )}
           {activeTab === 'kits' && (
@@ -433,7 +471,7 @@ export default function App() {
           )}
           {activeTab === 'progress' && <ProgressPage progress={progress} onRefresh={() => { void refreshProgress(); }} />}
           {activeTab === 'help' && <HelpPage onCreateKit={() => setActiveTab('create')} />}
-          {activeTab === 'settings' && <SettingsPage onLogout={() => { void handleLogout(); }} />}
+          {activeTab === 'settings' && <SettingsPage onLogout={() => { void handleLogout(); }} userProfile={userProfile} />}
           {activeTab === 'create' && <CreateKit onGenerate={handleGenerateKit} />}
           {activeTab === 'processing' && isProcessing && <Processing />}
           {activeTab === 'review' && currentKit && (
