@@ -33,6 +33,48 @@ import { supabase } from './lib/supabase';
 
 const MASTERY_KEY = 'nimble_kit_mastery_map';
 const LAST_SESSION_KEY = 'nimble_kit_last_session_map';
+const APP_TABS = new Set([
+  'dashboard',
+  'kits',
+  'progress',
+  'help',
+  'settings',
+  'create',
+  'processing',
+  'review',
+  'study-mode',
+  'study',
+  'complete',
+]);
+
+function readHashRoute(): { view: 'landing' | 'auth' | 'app'; tab: string } {
+  if (typeof window === 'undefined') {
+    return { view: 'landing', tab: 'dashboard' };
+  }
+
+  const raw = window.location.hash.replace(/^#\/?/, '').trim().toLowerCase();
+  if (!raw || raw === 'landing') {
+    return { view: 'landing', tab: 'dashboard' };
+  }
+  if (raw === 'auth') {
+    return { view: 'auth', tab: 'dashboard' };
+  }
+  if (APP_TABS.has(raw)) {
+    return { view: 'app', tab: raw };
+  }
+  return { view: 'landing', tab: 'dashboard' };
+}
+
+function writeHashRoute(view: 'landing' | 'auth' | 'app', activeTab: string): void {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  const nextRoute = view === 'app' ? activeTab : view;
+  const nextHash = `#/${nextRoute}`;
+  if (window.location.hash !== nextHash) {
+    window.location.hash = nextHash;
+  }
+}
 
 function loadJsonMap(key: string): Record<string, number> {
   const raw = window.localStorage.getItem(key);
@@ -98,10 +140,11 @@ function mapSourceToKit(
 }
 
 export default function App() {
-  const [view, setView] = useState<'landing' | 'auth' | 'app'>('landing');
+  const initialRoute = readHashRoute();
+  const [view, setView] = useState<'landing' | 'auth' | 'app'>(initialRoute.view);
   const [authReady, setAuthReady] = useState(false);
   const [authSession, setAuthSession] = useState<Session | null>(null);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState(initialRoute.tab);
   const [kits, setKits] = useState<Kit[]>([]);
   const [currentKitId, setCurrentKitId] = useState<string | null>(null);
   const [selectedStudyMode, setSelectedStudyMode] = useState<StudyMode>('standard');
@@ -186,6 +229,23 @@ export default function App() {
   }, [view, activeTab]);
 
   useEffect(() => {
+    const handleHashChange = () => {
+      const route = readHashRoute();
+      if (route.view === 'app') {
+        setActiveTab(route.tab);
+        setView(authSession ? 'app' : 'auth');
+        return;
+      }
+      setView(route.view);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+    };
+  }, [authSession]);
+
+  useEffect(() => {
     logDebug('app', 'Kits/progress state updated', {
       kits: kits.length,
       hasProgress: Boolean(progress),
@@ -265,6 +325,13 @@ export default function App() {
     setLoadedUserId(authSession.user.id);
     void enterApp();
   }, [authReady, authSession, loadedUserId]);
+
+  useEffect(() => {
+    if (!authReady) {
+      return;
+    }
+    writeHashRoute(view, activeTab);
+  }, [authReady, view, activeTab]);
 
   const handleLogout = async () => {
     logDebug('auth', 'Signing out');
